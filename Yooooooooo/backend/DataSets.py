@@ -10,10 +10,10 @@ sys.path.append('./datasets')
 
 mc_dict = {
     'Zee' : [
-        'ODEO_FEB2025_v0_2to4lep_mc_700321.Sh_2211_Zee_maxHTpTV2'
-        '_CFilterBVeto.2''to4lep.root',
         'ODEO_FEB2025_v0_2to4lep_mc_700320.Sh_2211_Zee_maxHTpTV2'
         '_BFilter.2to4lep.root',
+        'ODEO_FEB2025_v0_2to4lep_mc_700321.Sh_2211_Zee_maxHTpTV2'
+        '_CFilterBVeto.2to4lep.root',
         'ODEO_FEB2025_v0_2to4lep_mc_700322.Sh_2211_Zee_maxHTpTV2'
         '_CVetoBVeto.2to4lep.root'
         ],

@@ -4,7 +4,7 @@ Created on Fri Jun 13 15:42:38 2025
 
 @author: c01712ey
 """
-
+import time
 import awkward as ak
 import numpy as np # # for numerical calculations such as histogramming
 import matplotlib.pyplot as plt # for plotting
@@ -12,20 +12,34 @@ from matplotlib.ticker import MaxNLocator, AutoMinorLocator # for minor ticks
 
 def plot_histogram(all_data,
                    variable,
+                   color_list,
                    xmin,
                    xmax,
                    step_size,
                    x_label,
-                   y_label='',
+                   y_label='Events',
                    logy=False,
                    title='',
                    marker='o',
                    title_fontsize=13,
                    label_fontsize=13,
-                   legend_fontsize=13):
+                   legend_fontsize=13,
+                   index=0,
+                   scalar_variable=True):
+
+    # Check if all input lists are the same length
+    if not (len(all_data.keys()) == len(color_list)):
+        raise ValueError("Input lists for sample keys and colors must have the same length.")
+
+    if xmin >= xmax: 
+        raise ValueError("xmax needs to be larger than xmin.")
+    if step_size >= abs(xmax - xmin):
+        raise ValueError("Step size needs to be smaller than the (xmax - xmin).")
+        
+    time_start = time.time()
     
     bin_edges = np.arange(start=xmin, # The interval includes this value
-                          stop=xmax+step_size, # The interval doesn't include this value
+                          stop=xmax+step_size, # The interval doesn't include this value    
                           step=step_size) # Spacing between values
     bin_centres = np.arange(start=xmin+step_size/2,
                             stop=xmax+step_size/2,
@@ -48,25 +62,36 @@ def plot_histogram(all_data,
     
     main_axes = plt.gca()
 
-    for key, value in all_data.items(): # loop over samples
+    for (key, value), color in zip(all_data.items(), color_list): # loop over samples
+
+        # Validate the input variable
+        if variable not in value['results'].fields:
+            raise KeyError(f"Variable '{variable}' not found in sample '{key}'. Available varaible(s):"
+                           f"{value['results'].fields}")
+        
+        if scalar_variable:
+            data = value['results'][variable]
+        else: 
+            data = value['results'][variable][:, index]
+            
         if 'Data' in key:
-            data_x, _ = np.histogram(ak.to_numpy(value['results'][variable]), 
+            data_x, _ = np.histogram(ak.to_numpy(data), 
                                     bins=bin_edges) # histogram the data
             data_x_errors = np.sqrt(data_x) # statistical error on the data
             # plot the data points
             main_axes.errorbar(x=bin_centres, y=data_x, yerr=data_x_errors,
-                                marker=marker, color=value['color'], linestyle='none',
+                                marker=marker, color=color, linestyle='none',
                                 label=key) 
         elif 'Signal' in key:
-            signal_x.append(ak.to_numpy(value['results'][variable])) # histogram the signal
+            signal_x.append(ak.to_numpy(data)) # histogram the signal
             signal_weights.append(ak.to_numpy(value['results']['totalWeight'])) # get the weights of the signal events
-            signal_colors.append(value['color']) # get the colour for the signal bar
+            signal_colors.append(color) # get the colour for the signal bar
             signal_labels.append(key)
             signal_input = True
         else:
-            background_x.append(ak.to_numpy(value['results'][variable]) ) # append to the list of Monte Carlo histogram entries
+            background_x.append(ak.to_numpy(data)) # append to the list of Monte Carlo histogram entries
             background_weights.append(ak.to_numpy(value['results']['totalWeight'])) # append to the list of Monte Carlo weights
-            background_colors.append(value['color'] ) # append to the list of Monte Carlo bar colors
+            background_colors.append(color) # append to the list of Monte Carlo bar colors
             background_labels.append(key) # append to the list of Monte Carlo legend labels
             background_input = True
      
@@ -125,7 +150,7 @@ def plot_histogram(all_data,
                          x=1, horizontalalignment='right' )
     
     # write y-axis label for main axes
-    main_axes.set_ylabel('Events / ' + str(step_size) + ' GeV',
+    main_axes.set_ylabel(y_label,
                          fontsize=label_fontsize,
                          y=1, horizontalalignment='right') 
     
@@ -136,6 +161,9 @@ def plot_histogram(all_data,
     
     if logy:
         main_axes.set_yscale('log')
+
+    elapsed_time = time.time() - time_start 
+    print("Elapsed time = " + str(round(elapsed_time, 1)) + "s") # Print the time elapsed
 
         
     return fig, main_axes
