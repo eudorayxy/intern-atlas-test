@@ -32,9 +32,7 @@ def get_samples(keys_input, string_codes_input):
                 else:
                     raise KeyError(f'The string code: {i} not found.')
 
-            samples[key] = {
-                'files': dataset_file_list
-            }
+            samples[key] = dataset_file_list
     else:
         print("Input lists are empty.")
             
