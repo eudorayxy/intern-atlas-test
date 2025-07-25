@@ -1,4 +1,4 @@
-dataSets = {
+Dids_2to4lep = {
     'Zee' : [700320,700321,700322],
     'Zmumu' : [700323, 700324, 700325],
     'Ztautau' : [700792, 700793, 700794],
@@ -11,5 +11,18 @@ dataSets = {
     'ZZllll' : [700600, 700601] # ZZ*
     }
 
+Dids_Hyy = {
+    'ggF' : 343981,
+    'VBF' : 346214,
+    'WpH' : 345318,
+    'WmH' : 345317,
+    'ZH' : 345319,
+    'ggZH' : 345061,
+    'ttH' : 346525
+}
 validSkims = ['2to4lep', '2muons', 'GamGam', 'exactly4lep', '1LMET30', '3J1LMET30', 
               '2J2LMET30', '2bjets', '3lep', 'exactly3lep', '4lep']
+
+DIDS_ALL = {
+    '2to4lep': Dids_2to4lep
+}
