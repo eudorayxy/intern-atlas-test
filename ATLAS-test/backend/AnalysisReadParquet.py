@@ -7,22 +7,6 @@ import re
 import awkward as ak
 import numpy as np
 import pyarrow.parquet as pq
-from .ParquetDict import PARQUET_DICT, STR_CODE_COMBO, VALID_STR_CODE
-
-def count_num_events(string_code):
-    if string_code in PARQUET_DICT:
-        read_directory = PARQUET_DICT[string_code]
-        if not os.path.isdir(read_directory):
-            raise FileNotFoundError(f"Folder '{read_directory}' does not exist")
-
-        files = sorted(glob.glob(f'{read_directory}/*.parquet'))
-        tot_num_rows = 0
-        for file in files:
-            tot_num_rows += pq.ParquetFile(file).metadata.num_rows
-        return tot_num_rows
-    else:
-        print(f'{string_code} not found.')
-        raise ValueError
 
 def parse_var(input_var, parsed_variables):
     if '[' in input_var and ']' in input_var:
@@ -64,6 +48,7 @@ def concatenate_chunks(files, parsed_variables, cut_function, write_parquet, sam
             columns_to_read = [var for var in columns_to_read if var != 'totalWeight']
             rows_to_delete = np.any(parsed_variables == 'totalWeight', axis=1)
             parsed_variables = parsed_variables[~rows_to_delete]
+
         
         chunk_data_list = []
         num_row_groups = parquet_file.num_row_groups
@@ -148,52 +133,6 @@ def concatenate_chunks(files, parsed_variables, cut_function, write_parquet, sam
     else:
         return None
 
-def analysis_pq(string_code_list, fraction, parsed_variables, cut_function, write_parquet, output_directory, return_output):
-    all_data = {}
-    for str_code in string_code_list:
-        str_code = str(str_code)
-        sample_key = str_code
-
-        files = []
-        max_num_rows = 0
-        if str_code in PARQUET_DICT:
-            sample_directory = PARQUET_DICT[str_code]
-            pq_files = sorted(glob.glob(f'{sample_directory}/*.parquet'))
-            if not pq_files:
-                raise FileNotFoundError(f"No .parquet files found with the string code '{str_code}'") 
-            files.extend(pq_files)
-            
-            max_num_rows += round(count_num_events(str_code) * fraction)
-        else:
-            if str_code in STR_CODE_COMBO:
-                str_code = STR_CODE_COMBO[str_code]
-                
-            physics_processes = [code.strip() for code in str_code.split('+')]
-            for i in physics_processes:
-                if i in PARQUET_DICT:
-                    sample_directory =  PARQUET_DICT[i]
-                    pq_files = sorted(glob.glob(f'{sample_directory}/*.parquet'))
-                    if not pq_files:
-                        raise FileNotFoundError(f"No .parquet files found with the string code '{i}'")
-                    files.extend(pq_files)
-                    max_num_rows += round(count_num_events(i) * fraction)
-                else:
-                    raise ValueError(f'Invalid string code: {i}. Available string codes: {VALID_STR_CODE}')
-
-        sample_key = f'{sample_key}_{fraction}'
-        sample_key = sample_key.replace('.', '_')
-        sample_key = sample_key.replace('+', '_')
-       
-        if write_parquet:
-            sample_out_dir = f'{output_directory}/{sample_key}'
-            os.makedirs(sample_out_dir)
-        else:
-            sample_out_dir = None
-
-        all_data[sample_key] = concatenate_chunks(files, parsed_variables, cut_function, write_parquet, sample_out_dir, max_num_rows, return_output)
-        
-    if return_output:
-        return all_data
 
 def read_parquet(read_directory, subdirectory_names, fraction, parsed_variables, cut_function, write_parquet, output_directory, return_output):
     all_data = {}
@@ -229,10 +168,7 @@ def read_parquet(read_directory, subdirectory_names, fraction, parsed_variables,
         return all_data
         
 
-def analysis_parquet(read_variables, string_code_list=None, read_directory=None, subdirectory_names=None, fraction=1, cut_function=None, write_parquet=False, output_directory=None, return_output=True):
-
-    if string_code_list is None and read_directory is None:
-        raise ValueError('Either string_code_list or read_directory must be provided.')
+def analysis_read_parquet(read_variables, read_directory, subdirectory_names=None, fraction=1, cut_function=None, write_parquet=False, output_directory=None, return_output=True):
 
     if isinstance(read_variables, str):
         raise TypeError(f'read_variables must be a list. Got a string: {read_variables}')
@@ -248,17 +184,12 @@ def analysis_parquet(read_variables, string_code_list=None, read_directory=None,
             # Use current time to create a unique folder name
             now = datetime.datetime.now(ZoneInfo("Europe/London"))
             strf = now.strftime("%y%m%d%H%M") # Set time format
-            output_directory = f'output/analysis_parquet{strf}'
+            output_directory = f'output/analysis_read_parquet{strf}'
         print(f'Write data to output_directory: {output_directory}')
 
-    if string_code_list:
-        print('Input string_code_list found. Data samples will be accessed by the string code(s).')
-        all_data = analysis_pq(string_code_list, fraction, parsed_variables, cut_function, write_parquet, output_directory, return_output)
-    elif read_directory:
-        print(f'Input read_directory found. Data will be read from {read_directory}.')
-        all_data = read_parquet(read_directory, subdirectory_names, fraction, parsed_variables, cut_function, write_parquet, output_directory, return_output)
+    
+    all_data = read_parquet(read_directory, subdirectory_names, fraction, parsed_variables, cut_function, write_parquet, output_directory, return_output)
         
     elapsed_time = time.time() - time_start 
     print("Elapsed time = " + str(round(elapsed_time, 1)) + "s") # Print the time elapsed
     return all_data
-

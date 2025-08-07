@@ -104,6 +104,7 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
             bullets += 1
         
             data_x = hist_data.view(flow=False)
+            # print(f'data_x[:5] = {data_x[:5]}')
             data_x_errors = np.sqrt(data_x) # statistical error on the data
             hists.append(hist_data)
             
@@ -113,8 +114,10 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
                                 label=key) 
         elif 'Signal' in key:
             signal_x.append(ak.to_numpy(ak.fill_none(variable_data, np.nan))) # histogram the signal
+            # print(f'signal_x[-1][:5] = {signal_x[-1][:5]}')
             if 'totalWeight' in valid_var:
                 signal_weights.append(ak.to_numpy(value['totalWeight']))
+                # print(signal_weights)
             else:
                 signal_weights.append(np.ones(len(variable_data)))
             signal_colors.append(color) # get the colour for the signal bar
@@ -122,6 +125,7 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
             signal_input = True # MC signal present
         else:
             background_x.append(ak.to_numpy(ak.fill_none(variable_data, np.nan))) # append to the list of MC histogram entries
+            # print(f'background_x[-1][:5] = {background_x[-1][:5]}')
             
             # append to the list of MC weights
             if 'totalWeight' in valid_var:
@@ -164,12 +168,14 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
     else:
         back_stacked_counts = np.zeros(len(bin_centres))
 
+    # print(f'before signal_input, back_stacked_counts = {back_stacked_counts[:5]}')
     
     if signal_input: # MC signal present
         signal_hists = []
         for data, weight, label in zip(signal_x, signal_weights, signal_labels):
             signal_hist = Hist.new.Reg(num_bins, xmin, xmax, name=label).Weight()
             signal_hist.fill(data, weight=weight)
+            # print(f'signal_hist.view(flow=False).value[:5] = {signal_hist.view(flow=False).value[:5]}')
             text.append(f'({bullets}) {label}: Weighted Sum (value = {signal_hist.sum().value:.3e}, '
                         f'Variance = {signal_hist.sum().variance:.3e}),')
             text.append(f'Underflow = {signal_hist.view(flow=True)[0].value:.3e}, '
@@ -180,19 +186,26 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
             
         # Total count of signal data
         stacked_counts = sum(h.view(flow=False).value for h in signal_hists)
+        # print(f'after in signal_input and after for loop, stacked_counts[:5] = {stacked_counts[:5]}')
 
         # Plot the bars
         bottom = back_stacked_counts.copy()
+        # print(f'bottom[:5] = {bottom[:5]}')
+        # print(f'back_stacked_counts[:5] = {back_stacked_counts[:5]}')
         
         for h, color, label in zip(signal_hists, signal_colors, signal_labels):
             counts = h.view(flow=False).value
             main_axes.bar(x=bin_centres, height=counts, width=widths, bottom=bottom, color=color,
                     label=label, align='center')
             bottom += counts
+            # print(f'in the signal_hists for loop, back_stacked_counts = {back_stacked_counts[:5]}')
     else:
         stacked_counts = np.zeros(len(bin_centres))
 
+    # print(f'after if signal_input, stacked_counts[:5] = {stacked_counts[:5]}')
+    # print(f'back_stacked_counts[:5] = {back_stacked_counts[:5]}')
     mc_total = stacked_counts + back_stacked_counts
+    # print(f'mc_total[:5] = {mc_total[:5]}')
 
     if residual_axes is not None:
         if not np.all(mc_total == 0) and not np.all(data_x == 0):
@@ -203,6 +216,7 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
                                  data_x,
                                  out=np.zeros_like(data_x),  # set to 0 when undefined
                                  where=data_x != 0)
+            # print(f'ratio[:5] = {ratio[:5]}')
             residual_axes.errorbar(bin_centres, ratio, yerr=yerr, fmt='ko')
             residual_axes.axhline(1, color='r', linestyle='--')
             residual_axes.set_xlabel(x_label, fontsize=label_fontsize,
@@ -295,7 +309,7 @@ def plot_stacked_hist(data_dict, plot_variable, color_list,
         fig_size=(12, 8), # Figure size
         show_text=False, # Bool - whether to show the text that displays histogram info
         show_back_unc=True, # Bool - whether to show the background uncertainty
-        save_fig=False,
+        save_fig=True,
         fig_name=None,
         residual_plot=False,
         residual_plot_ylim=None              
@@ -435,7 +449,7 @@ def histogram_2d(data, num_bins, min_max, label,
     h.fill(ak.to_numpy(data_x), ak.to_numpy(data_y))
 
     # Plot 2D histogram
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8, 5), dpi=500)
     values, x_bin_edges, y_bin_edges = h.to_numpy()
     mesh = ax.pcolormesh(x_bin_edges, y_bin_edges, values.T, cmap="viridis")
     

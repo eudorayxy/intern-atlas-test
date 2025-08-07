@@ -1,27 +1,55 @@
+directory = '../backend/parquet'
 PARQUET_DICT = {
-    # Full data
-    'Zee' : 'parquet/Zee',
-    'Zmumu' : 'parquet/Zmumu',
-    '2to4lep' : 'parquet/2to4lep',
-    'Wenu' : 'parquet/Wenu',
-    'Wmunu' : 'parquet/Wmunu',
-    'Wtaunu' : 'parquet/Wtaunu',
-    'Wlepnu' : 'parquet/Wlepnu',
-    # 1%
-    'Zee_0_01' : 'parquet/Zee_0_01',
-    'Zmumu_0_01' : 'parquet/Zmumu_0_01',
-    '2to4lep_0_01' : 'parquet/2to4lep_0_01',
-    'Wenu_0_01' : 'parquet/Wenu_0_01',
-    'Wmunu_0_01' : 'parquet/Wmunu_0_01',
-    'Wtaunu_0_01' : 'parquet/Wtaunu_0_01',
-    'Wlepnu_0_01' : 'parquet/Wlepnu_0_01',
-    # Full data
-    'Hyy' : 'parquet/Hyy',
-    'GamGam' : 'parquet/GamGam',
-    # 20%
-    'Hyy_0_2' : 'parquet/Hyy_0_2',
-    'GamGam_0_2' : 'parquet/GamGam_0_2'
+    '2to4lep' : f'{directory}/2to4lep',
     
+    'Zee' : f'{directory}/Zee',
+    'Zmumu' : f'{directory}/Zmumu',
+    'Ztautau' : f'{directory}/Ztautau',
+    'VBF_Zee' : f'{directory}/VBF_Zee',
+    'VBF_Zmumu' : f'{directory}/VBF_Zmumu',
+    'VBF_Ztautau' : f'{directory}/VBF_Ztautau',
+    
+    'Wenu' : f'{directory}/Wenu',
+    'Wmunu' : f'{directory}/Wmunu',
+    'Wtaunu' : f'{directory}/Wtaunu',
+    'VBF_Wenu' : f'{directory}/VBF_Wenu',
+    'VBF_Wmunu' : f'{directory}/VBF_Wmunu',
+    'VBF_Wtaunu' : f'{directory}/VBF_Wtaunu',
+    
+    'ttbar' : f'{directory}/ttbar',
+    'VV4l' : f'{directory}/VV4l',
+    
+    'm10_40_Zee' : f'{directory}/m10_40_Zee',
+    'm10_40_Zmumu' : f'{directory}/m10_40_Zmumu',
+    
+    'ggH_H4l' : f'{directory}/ggH_H4l',
+    'VBF_H4l' : f'{directory}/VBF_H4l',
+    'WpH_H4l' : f'{directory}/WpH_H4l',
+    'WmH_H4l' : f'{directory}/WmH_H4l',
+    'ZH_H4l' : f'{directory}/ZH_H4l',
+    'ggZH_H4l' : f'{directory}/ggZH_H4l',
+    'ttH_H4l' : f'{directory}/ttH_H4l',
+    
+    'GamGam' : f'{directory}/GamGam',
+    
+    'ggF_Hyy' : f'{directory}/ggF_Hyy',
+    'VBF_Hyy' : f'{directory}/VBF_Hyy',
+    'WpH_Hyy' : f'{directory}/WpH_Hyy',
+    'WmH_Hyy' : f'{directory}/WmH_Hyy',
+    'ZH_Hyy' : f'{directory}/ZH_Hyy',
+    'ggZH_Hyy' : f'{directory}/ggZH_Hyy',
+    'ttH_Hyy' : f'{directory}/ttH_Hyy',
 }
+
+STR_CODE_COMBO = {
+    'VBF_Zll' : 'VBF_Zee + VBF_Zmumu + VBF_Ztautau',
+    'm10_40_Zll' : 'm10_40_Zee + m10_40_Zmumu',
+    'Wlepnu' : 'Wenu + Wmunu + Wtaunu',
+    'VBF_Wlepnu' : 'VBF_Wenu + VBF_Wmunu + VBF_Wtaunu',
+    'H4l' : 'ggH_H4l + VBF_H4l + WpH_H4l + WmH_H4l + ZH_H4l + ggZH_H4l + ttH_H4l',
+    'Hyy' : 'ggF_Hyy + VBF_Hyy + WpH_Hyy + WmH_Hyy + ZH_Hyy + ggZH_Hyy + ttH_Hyy'
+}
+
+VALID_STR_CODE = list(PARQUET_DICT.keys()) + list(STR_CODE_COMBO.keys())
 
 DATA_SKIMS = ['2to4lep', '2muons', 'GamGam', 'exactly4lep', '1LMET30', '3J1LMET30', '2J2LMET30', '2bjets', '3lep', 'exactly3lep', '4lep']

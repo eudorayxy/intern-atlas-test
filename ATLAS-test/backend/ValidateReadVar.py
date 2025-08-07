@@ -1,16 +1,22 @@
 import os
 import glob
 import pyarrow.parquet as pq
-from .ParquetDict import PARQUET_DICT
+from .ParquetDict import PARQUET_DICT, STR_CODE_COMBO
 
 
 def get_valid_variables(string_code):
+    if string_code in STR_CODE_COMBO:
+        string_code = STR_CODE_COMBO[string_code]
+        physics_processes = [code.strip() for code in string_code.split('+')]
+        string_code = physics_processes[0]
+        
     if string_code in PARQUET_DICT:
         read_directory = PARQUET_DICT[string_code]
         if not os.path.isdir(read_directory):
             raise FileNotFoundError(f"Folder '{read_directory}' does not exist")
 
         files = sorted(glob.glob(f'{read_directory}/*.parquet'))
+        print(f'Variables validated using {files[0]}')
 
         # Read schema from the parquet file
         parquet_file = pq.ParquetFile(files[0])
