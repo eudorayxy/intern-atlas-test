@@ -21,15 +21,17 @@ def get_valid_variables(string_code):
         print(f'{string_code} not found.')
         raise ValueError
 
-def validate_read_variables(string_code, read_variables):
-    valid_var_list = get_valid_variables(string_code)
-    
+def validate_read_variables(string_code_list, read_variables):
     validated = []
-    for variable_input in read_variables:
-        if variable_input not in valid_var_list:
-            print(f"Skipping '{variable_input}' - invalid input")
-        elif variable_input in validated:
-            print(f"Skipping '{variable_input}' - duplicated entry")
-        else:
-            validated.append(variable_input)
+    
+    for string_code in string_code_list:
+        valid_var_list = get_valid_variables(string_code)
+        
+        for variable_input in read_variables:
+            if variable_input not in valid_var_list:
+                print(f"Skipping '{variable_input}' - invalid input for string code '{string_code}'")
+            elif variable_input in validated:
+                continue
+            else:
+                validated.append(variable_input)
     return validated

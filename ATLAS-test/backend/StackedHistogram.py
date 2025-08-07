@@ -55,7 +55,7 @@ def get_variable_data(variable, key, value, valid_var):
                        f"{valid_var}")
     return variable_data
 
-def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, main_axes, marker, show_back_unc, residual_axes, x_label, label_fontsize, tick_labelsize):
+def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, main_axes, marker, show_back_unc, residual_axes, x_label, label_fontsize, tick_labelsize, residual_plot_ylim):
     background_x = [] # define list to hold the MC histogram entries
     background_weights = [] # define list to hold the MC weights
     background_colors = [] # define list to hold the colors of the MC bars
@@ -90,6 +90,7 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
         else:
             print(f'Key "{key}" : Unexpected type of dict value. Expect dict or Awkward Array.')
             raise TypeError
+        
         # Validate the input variable
         variable_data = get_variable_data(variable, key, value, valid_var)
             
@@ -103,7 +104,6 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
             bullets += 1
         
             data_x = hist_data.view(flow=False)
-            # print(f'data_x[:5] = {data_x[:5]}')
             data_x_errors = np.sqrt(data_x) # statistical error on the data
             hists.append(hist_data)
             
@@ -113,7 +113,6 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
                                 label=key) 
         elif 'Signal' in key:
             signal_x.append(ak.to_numpy(ak.fill_none(variable_data, np.nan))) # histogram the signal
-            # print(f'signal_x[-1][:5] = {signal_x[-1][:5]}')
             if 'totalWeight' in valid_var:
                 signal_weights.append(ak.to_numpy(value['totalWeight']))
             else:
@@ -123,7 +122,6 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
             signal_input = True # MC signal present
         else:
             background_x.append(ak.to_numpy(ak.fill_none(variable_data, np.nan))) # append to the list of MC histogram entries
-            # print(f'background_x[-1][:5] = {background_x[-1][:5]}')
             
             # append to the list of MC weights
             if 'totalWeight' in valid_var:
@@ -166,14 +164,12 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
     else:
         back_stacked_counts = np.zeros(len(bin_centres))
 
-    # print(f'before signal_input, back_stacked_counts = {back_stacked_counts[:5]}')
     
     if signal_input: # MC signal present
         signal_hists = []
         for data, weight, label in zip(signal_x, signal_weights, signal_labels):
             signal_hist = Hist.new.Reg(num_bins, xmin, xmax, name=label).Weight()
             signal_hist.fill(data, weight=weight)
-            # print(f'signal_hist.view(flow=False).value[:5] = {signal_hist.view(flow=False).value[:5]}')
             text.append(f'({bullets}) {label}: Weighted Sum (value = {signal_hist.sum().value:.3e}, '
                         f'Variance = {signal_hist.sum().variance:.3e}),')
             text.append(f'Underflow = {signal_hist.view(flow=True)[0].value:.3e}, '
@@ -184,26 +180,19 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
             
         # Total count of signal data
         stacked_counts = sum(h.view(flow=False).value for h in signal_hists)
-        # print(f'after in signal_input and after for loop, stacked_counts[:5] = {stacked_counts[:5]}')
 
         # Plot the bars
         bottom = back_stacked_counts.copy()
-        # print(f'bottom[:5] = {bottom[:5]}')
-        # print(f'back_stacked_counts[:5] = {back_stacked_counts[:5]}')
         
         for h, color, label in zip(signal_hists, signal_colors, signal_labels):
             counts = h.view(flow=False).value
             main_axes.bar(x=bin_centres, height=counts, width=widths, bottom=bottom, color=color,
                     label=label, align='center')
             bottom += counts
-            # print(f'in the signal_hists for loop, back_stacked_counts = {back_stacked_counts[:5]}')
     else:
         stacked_counts = np.zeros(len(bin_centres))
 
-    # print(f'after if signal_input, stacked_counts[:5] = {stacked_counts[:5]}')
-    # print(f'back_stacked_counts[:5] = {back_stacked_counts[:5]}')
     mc_total = stacked_counts + back_stacked_counts
-    # print(f'mc_total[:5] = {mc_total[:5]}')
 
     if residual_axes is not None:
         if not np.all(mc_total == 0) and not np.all(data_x == 0):
@@ -214,7 +203,6 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
                                  data_x,
                                  out=np.zeros_like(data_x),  # set to 0 when undefined
                                  where=data_x != 0)
-            # print(f'ratio[:5] = {ratio[:5]}')
             residual_axes.errorbar(bin_centres, ratio, yerr=yerr, fmt='ko')
             residual_axes.axhline(1, color='r', linestyle='--')
             residual_axes.set_xlabel(x_label, fontsize=label_fontsize,
@@ -230,13 +218,14 @@ def stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, mai
                                   labelsize=tick_labelsize, # Label size
                                   top=True, # draw ticks on the top axis
                                   right=True) # draw ticks on right axis
-
-
+            if residual_plot_ylim is not None:
+                residual_axes.set_ylim(residual_plot_ylim[0], residual_plot_ylim[1])
 
     return bin_centres, hists, text
 
 
-def validate_plotting_input(data_dict, color_list, num_bins, xmin, xmax, fig_size):
+def validate_plotting_input(data_dict, color_list, num_bins, xmin, xmax, fig_size,
+                            ylim, residual_plot_ylim):
     if not isinstance(data_dict, dict):
         raise TypeError('data_dict must be a dict.')
 
@@ -270,11 +259,28 @@ def validate_plotting_input(data_dict, color_list, num_bins, xmin, xmax, fig_siz
     if len(fig_size) != 2 or not all(value > 0 for value in fig_size):
         raise ValueError("fig_size must be a tuple of two positive numbers.")
 
+    # Validate ylim
+    if ylim is not None:
+        if (not isinstance(ylim, tuple)
+            or not all(isinstance(value, (int, float)) for value in ylim)):
+            raise ValueError("ylim must be a tuple of two numbers.")
+        if ylim[1] <= ylim[0]:
+            raise ValueError(f"ylim[0] must be smaller than ylim[1]. Got ylim[0] '{ylim[0]}' and ylim[1] '{ylim[1]}'.")
+
+    # Validate ylim for residual plot
+    if residual_plot_ylim is not None:
+        if (not isinstance(residual_plot_ylim, tuple)
+            or not all(isinstance(value, (int, float)) for value in residual_plot_ylim)):
+            raise ValueError("residual_plot_ylim must be a tuple of two numbers.")
+        if residual_plot_ylim[1] <= residual_plot_ylim[0]:
+            raise ValueError(f"residual_plot_ylim[0] must be smaller than residual_plot_ylim[1]. Got residual_plot_ylim[0] '{residual_plot_ylim[0]}' and residual_plot_ylim[1] '{residual_plot_ylim[1]}'.")
+
 
 def plot_stacked_hist(data_dict, plot_variable, color_list,
                       num_bins, xmin, xmax, x_label,
         # Optional arg
         y_label=None, # Str for y axis label
+        ylim=None,
         fit=None,
         fit_label='fit',
         fit_fmt='-r',
@@ -289,11 +295,13 @@ def plot_stacked_hist(data_dict, plot_variable, color_list,
         fig_size=(12, 8), # Figure size
         show_text=False, # Bool - whether to show the text that displays histogram info
         show_back_unc=True, # Bool - whether to show the background uncertainty
+        save_fig=False,
         fig_name=None,
-        residual_plot=False
+        residual_plot=False,
+        residual_plot_ylim=None              
        ):
     
-    validate_plotting_input(data_dict, color_list, num_bins, xmin, xmax, fig_size)
+    validate_plotting_input(data_dict, color_list, num_bins, xmin, xmax, fig_size, ylim, residual_plot_ylim)
 
     time_start = time.time()
 
@@ -306,7 +314,7 @@ def plot_stacked_hist(data_dict, plot_variable, color_list,
         fig, main_axes = plt.subplots(figsize=fig_size)
         residual_axes = None
 
-    bin_centres, hists, text = stacked_histogram(data_dict, color_list, plot_variable, xmin, xmax, num_bins, main_axes, marker, show_back_unc, residual_axes, x_label, label_fontsize, tick_labelsize)
+    bin_centres, hists, text = stacked_histogram(data_dict, color_list, plot_variable, xmin, xmax, num_bins, main_axes, marker, show_back_unc, residual_axes, x_label, label_fontsize, tick_labelsize, residual_plot_ylim)
 
     if fit is not None:
         if len(fit) != len(bin_centres):
@@ -346,6 +354,9 @@ def plot_stacked_hist(data_dict, plot_variable, color_list,
     main_axes.legend(frameon=False, fontsize=legend_fontsize) # no box around the legend    
     
     main_axes.set_title(title, fontsize=title_fontsize)
+
+    if ylim is not None:
+        main_axes.set_ylim(ylim[0], ylim[1])
     
     if logy:
         main_axes.set_yscale('log')
@@ -359,8 +370,12 @@ def plot_stacked_hist(data_dict, plot_variable, color_list,
     plt.tight_layout()
     plt.show()
 
-    if fig_name:
-        fig.savefig(str(fig_name))
+    if save_fig:
+        if not fig_name:
+            fig_name = f'{plot_variable}_'
+            for i in data_dict.keys():
+                fig_name += i
+        fig.savefig(str(fig_name), dpi=500)
 
     return fig, hists
     
@@ -529,8 +544,7 @@ def validate_num_bins(num_bins_list, variable_count):
                         " list/tuple of int with the same length as variable list.")
                 
     return num_bins
-            
-    
+
 def validate_xmin_xmax(xmin_xmax_list, variable_count):
     if isinstance(xmin_xmax_list, str):
         raise TypeError("Input for xmin and xmax must not be a str.")
@@ -581,6 +595,113 @@ def validate_xmin_xmax(xmin_xmax_list, variable_count):
         "2. A list of (xmin, xmax) tuples/lists of same length as variable count. "
         f"Number of input variables = {variable_count}."
     )  
+            
+    
+def validate_ylim_list(ylim_list, variable_count):
+    if ylim_list is None:
+        return [None] * variable_count
+    if isinstance(ylim_list, str):
+        raise TypeError("Input for ylim_list must not be a str.")
+
+    ylim = [] # Store validated input
+
+    # Case 1: Single ylim tuple/list for all variables
+    if (isinstance(ylim_list, (list, tuple)) # Only accept a tuple or list, avoid str input
+        and len(ylim_list) == 2 # Only accept (a, b) or [a, b]
+        # where a and b are int or float
+        and all(isinstance(value, (int, float)) for value in ylim_list)
+       ): 
+        ymin, ymax = ylim_list
+        # Raise error if ymax is smaller than or equal to ymin
+        if ymax <= ymin:
+            raise ValueError(f"Input ylim_list = {ylim_list} : ylim_list[1] must be greater than ylim_list[0].")
+        # Make ylim a list with the same length as variable list
+        ylim = [(ymin, ymax)] * variable_count
+        return ylim
+
+    # Case 2: List of ylim_list for each variable.
+    if (isinstance(ylim_list, (list, tuple)) # Avoid str input
+        and len(ylim_list) == variable_count # Number of pairs must match number of variables
+       ):
+        for pair in ylim_list:
+            # Raise error if each object in ylim_list is not a tuple or list of 2 numbers
+            if not isinstance(pair, (list, tuple)):
+                raise TypeError(f"Each element of ylim_list must be a tuple/list of two numbers. Got {pair}")
+
+            if len(pair) != 2:
+                raise ValueError(f"Each element of ylim_list must be a tuple/list of two numbers. Got {pair}")
+                
+            ymin, ymax = pair
+            # Only accept (a, b) or [a, b] where a and b are int or float
+            if not all(isinstance(value, (int, float)) for value in (ymin, ymax)):
+                raise TypeError(f"Input in ylim_list = {pair} : Both numbers must be int or float.")
+            # Raise error if ymax is smaller than or equal to ymin
+            if ymax <= ymin:
+                raise ValueError(f"Input in ylim_list = {pair} : The second number must be greater than the first.")
+            # Update with validated input    
+            ylim.append((ymin, ymax))
+        return ylim
+
+    # If none of the above formats match
+    raise ValueError(
+        "Invalid format for ylim_list. Must be either:\n"
+        "1. A tuple/list of two numbers\n"
+        "2. A list of (ymin, ymax) tuples/lists of same length as variable count. "
+        f"Number of input variables = {variable_count}."
+    )  
+
+def validate_residual_ylim_list(residual_ylim_list, variable_count):
+    if residual_ylim_list is None:
+        return [None] * variable_count
+    if isinstance(residual_ylim_list, str):
+        raise TypeError("Input for residual_ylim_list must not be a str.")
+
+    residual_ylim = [] # Store validated input
+
+    # Case 1: Single residual_ylim tuple/list for all variables
+    if (isinstance(residual_ylim_list, (list, tuple)) # Only accept a tuple or list, avoid str input
+        and len(residual_ylim_list) == 2 # Only accept (a, b) or [a, b]
+        # where a and b are int or float
+        and all(isinstance(value, (int, float)) for value in residual_ylim_list)
+       ): 
+        ymin, ymax = residual_ylim_list
+        # Raise error if ymax is smaller than or equal to ymin
+        if ymax <= ymin:
+            raise ValueError(f"Input residual_ylim_list = {residual_ylim_list} : residual_ylim_list[1] must be greater than residual_ylim_list[0].")
+        # Make residual_ylim a list with the same length as variable list
+        residual_ylim = [(ymin, ymax)] * variable_count
+        return residual_ylim
+
+    # Case 2: List of residual_ylim_list for each variable.
+    if (isinstance(residual_ylim_list, (list, tuple)) # Avoid str input
+        and len(residual_ylim_list) == variable_count # Number of pairs must match number of variables
+       ):
+        for pair in residual_ylim_list:
+            # Raise error if each object in residual_ylim_list is not a tuple or list of 2 numbers
+            if not isinstance(pair, (list, tuple)):
+                raise TypeError(f"Each element of residual_ylim_list must be a tuple/list of two numbers. Got {pair}")
+
+            if len(pair) != 2:
+                raise ValueError(f"Each element of residual_ylim_list must be a tuple/list of two numbers. Got {pair}")
+                
+            ymin, ymax = pair
+            # Only accept (a, b) or [a, b] where a and b are int or float
+            if not all(isinstance(value, (int, float)) for value in (ymin, ymax)):
+                raise TypeError(f"Input in residual_ylim_list = {pair} : Both numbers must be int or float.")
+            # Raise error if ymax is smaller than or equal to ymin
+            if ymax <= ymin:
+                raise ValueError(f"Input  in residual_ylim_list = {pair} : The second number must be greater than the first.")
+            # Update with validated input    
+            residual_ylim.append((ymin, ymax))
+        return residual_ylim
+
+    # If none of the above formats match
+    raise ValueError(
+        "Invalid format for residual_ylim_list. Must be either:\n"
+        "1. A tuple/list of two numbers\n"
+        "2. A list of (ymin, ymax) tuples/lists of same length as variable count. "
+        f"Number of input variables = {variable_count}."
+    )  
 
 
 # This function aims to plot one or more variables separately
@@ -593,6 +714,7 @@ def plot_histograms(
         x_label_list,
         # Optional arguments start from here
         y_label_list=None, # Str or list of str for y axis label
+        ylim_list=None, # Tuple of 2 numbers or list of tuples for y axis limit
         logy=False, # Whether to set the y axis as log scale
         title_list=None, # Str or list of str for title
         marker='o', # Marker type
@@ -604,7 +726,8 @@ def plot_histograms(
         fig_size=(12, 8), # Figure size
         show_text=False, # Bool - whether to show the text that displays histogram info
         show_back_unc=True, # Bool - whether to show the background uncertainty
-        residual_plot=False
+        residual_plot=False,
+        residual_ylim_list=None # Tuple of 2 numbers or list of tuples for residual plot y-axis limit
     ):
     if not isinstance(data_dict, dict):
         raise TypeError('data_dict must be a dict.')
@@ -651,13 +774,19 @@ def plot_histograms(
     # Validate xmin xmax input                
     xmin_xmax_list = validate_xmin_xmax(xmin_xmax_list, variable_count)
 
+    # Validate main plot and residual plot ylim
+    ylim_list = validate_ylim_list(ylim_list, variable_count)
+    residual_ylim_list = validate_residual_ylim_list(residual_ylim_list, variable_count)
+
     fig_list = []
     hists_list = []
                 
     for (variable, x_label, y_label,
-         xmin_xmax, num_bins, title) in zip(plot_variables, x_label_list,
-                                                y_label_list, xmin_xmax_list,
-                                                num_bins_list, title_list):
+         xmin_xmax, num_bins, title,
+         ylim, residual_ylim) in zip(plot_variables, x_label_list,
+                                     y_label_list, xmin_xmax_list,
+                                     num_bins_list, title_list, ylim_list, 
+                                     residual_ylim_list):
         
         if residual_plot:
         # Create main plot and residual subplot
@@ -667,7 +796,7 @@ def plot_histograms(
             residual_axes = None
         
         xmin, xmax = xmin_xmax
-        _, hists, text = stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, main_axes, marker, show_back_unc, residual_axes, x_label, label_fontsize, tick_labelsize)
+        _, hists, text = stacked_histogram(data_dict, color_list, variable, xmin, xmax, num_bins, main_axes, marker, show_back_unc, residual_axes, x_label, label_fontsize, tick_labelsize, residual_ylim)
 
         if show_text:
             if residual_plot:
@@ -677,7 +806,8 @@ def plot_histograms(
                 for i, line in enumerate(text):
                     main_axes.text(-0.05, -0.2 - i * 0.05, line, ha='left', va='top', transform=main_axes.transAxes, fontsize=text_fontsize)
         
-            
+        if ylim is not None:
+            main_axes.set_ylim(ylim[0], ylim[1])
         # separation of x axis minor ticks
         main_axes.xaxis.set_minor_locator(AutoMinorLocator()) 
         
@@ -705,6 +835,9 @@ def plot_histograms(
         
         if logy:
             main_axes.set_yscale('log')
+
+        if ylim:
+            main_axes.set_ylim(ylim[0], ylim[1])
     
         elapsed_time = time.time() - time_start 
         print("Elapsed time = " + str(round(elapsed_time, 1)) + "s") # Print the time elapsed
