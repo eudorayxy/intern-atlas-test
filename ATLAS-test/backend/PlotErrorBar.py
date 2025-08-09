@@ -6,12 +6,6 @@ from matplotlib.ticker import AutoMinorLocator # for minor ticks
 import hist
 from hist import Hist
 
-
-# 30/07/2025
-# data = {
-# label1 : {array : Array[...], weight : Array[...], color : str},
-# label2 : {array : Array[...], weight : None, color : str},
-# }
 def plt_errorbar(main_axes, key, value, xmin, xmax, num_bins, marker):
 #  data =
 #     label1: {\n"
@@ -30,52 +24,62 @@ def plt_errorbar(main_axes, key, value, xmin, xmax, num_bins, marker):
 
     txt = []
     
-    # Replace any None with nan
+    # Replace any None with nan then convert to numpy array
     array = ak.to_numpy(ak.fill_none(array, np.nan))
 
-    if weight is not None:
+    if weight is not None: # Use storage.Weight() if weight provided by user
         weight = ak.to_numpy(ak.fill_none(weight, 0.0))
         h = Hist.new.Reg(num_bins, xmin, xmax, name=key).Weight()
         h.fill(array, weight=weight)
-        view = h.view(flow=False)
-        data_points = view.value
+        view = h.view(flow=False) # 2d array, need unpacking as below
+        data_points = view.value # bin values
         data_err = np.sqrt(view.variance)
+        # Text annotations
         txt.append(f'- {key}: Weighted Sum (value = {h.sum().value:.3e}, '
                     f'variance = {h.sum().variance:.3e}),')
         txt.append(f'Underflow = {h.view()[0].value:.3e}, '
                    f'Overflow = {h.view()[-1].value:.3e}')
-    else:
+    else: # Use storage.Double() if weight not given by user
         h = Hist.new.Reg(num_bins, xmin, xmax, name=key).Double()
         h.fill(array)
-        data_points =  h.view(flow=False)
+        data_points =  h.view(flow=False) # flat array, no need unpacking
         data_err = np.sqrt(data_points)
+        # Text annotations
         txt.append(f'- {key}: Sum (value = {sum(data_points):.3e}),')
         txt.append(f'Underflow = {h.view()[0]:.3e}, '
                    f'Overflow = {h.view()[-1]:.3e}')
         
-    # plot the data points
+    # plot the data points with errorbar
     main_axes.errorbar(x=bin_centres, y=data_points, yerr=data_err,
                         marker=marker, color=color, linestyle='none',
                         label=f'{key}')
     return h, txt
 
-
+# This function calls plt_errorbar for each entry in data_dict
+# Example: data_dict = {
+# label1 : {array : Array[...], weight : Array[...], color : str},
+# label2 : {array : Array[...], weight : None, color : str},
+# }
+# This function aims to plot different variables on a single figure, or
+# plot histograms produced under different selection cut as data points
+# with errorbar for better visual comparison
 def plot_errorbars(data_dict,
-                           xmin,
-                           xmax,
-                           num_bins,
-                           x_label,
-                           y_label='Events',
-                           logy=False,
-                           title='',
-                           marker='o',
-                           title_fontsize=17,
-                           label_fontsize=17,
-                           legend_fontsize=17,
-                           tick_labelsize=15,
-                            text_fontsize=14,
-                            show_text=False,
-                            fig_size=(12, 8)):
+                   xmin, # Left edge of first bin
+                   xmax, # Right edge of last bin
+                   num_bins, # Number of bins
+                   x_label, # x-axis label
+                   # Optional arguments start from here
+                   y_label='Events',
+                   logy=False,
+                   title='',
+                   marker='o',
+                   title_fontsize=17,
+                   label_fontsize=17,
+                   legend_fontsize=17,
+                   tick_labelsize=15,
+                   text_fontsize=14,
+                   show_text=False,
+                   fig_size=(12, 8)):
 
     data_format = ("data_dict = {\n"
     "  label1: {\n"
@@ -91,7 +95,8 @@ def plot_errorbars(data_dict,
     "}")
 
     valid_inner_key = ['array', 'weight', 'color']
-    
+
+    # Validate data_dict
     if not isinstance(data_dict, dict):
        raise TypeError(f"Expect 'data_dict' (the first positional argument of the function) to be a dict. The correct format is:\n{data_format}")
 
@@ -109,8 +114,8 @@ def plot_errorbars(data_dict,
         if isinstance(array, str):
             raise TypeError(f'{key} dict : The value of the inner key "array" should be an array. Got a str instead')
         if weight is not None:
-            if isinstance(weight, str):
-                raise TypeError(f'{key} dict : The value of the inner key "weight" should be an array or None. Got a str instead')
+            if isinstance(weight, (str, int, float)):
+                raise TypeError(f'{key} dict : The value of the inner key "weight" should be an array or None. Got a {type(weight)} instead')
             if len(array) != len(weight):
                 raise ValueError(f'{key} dict : The value of the inner key "weight" should be None or an array with the same length as "array". Got {len(weight)} and {len(array)}')
 
@@ -142,19 +147,20 @@ def plot_errorbars(data_dict,
 
     text = [] # Hold text info for each histogram
     hists_list = [] # Hold histogram objects
-        
+
+    # Plot data points with errorbar for each entry in data_dict
     for key, value in data_dict.items():
         h, txt = plt_errorbar(main_axes, key, value, xmin, xmax, num_bins, marker)
         text.extend(txt)
         hists_list.append(h)
-        
+
+    # Text annotations under the plot
     if show_text:
         for i, line in enumerate(text):
             main_axes.text(-0.05, -0.15 - i * 0.05, line, ha='left', va='top', transform=main_axes.transAxes, fontsize=text_fontsize)
             
     # separation of x axis minor ticks
     main_axes.xaxis.set_minor_locator(AutoMinorLocator()) 
-    
     # set the axis tick parameters for the main axes
     main_axes.tick_params(which='both', # ticks on both x and y axes
                           direction='in', # Put ticks inside and outside the axes
@@ -162,18 +168,11 @@ def plot_errorbars(data_dict,
                           top=True, # draw ticks on the top axis
                           right=True) # draw ticks on right axis
 
-
-    # x-axis label
     main_axes.set_xlabel(x_label, fontsize=label_fontsize,
                          x=1, horizontalalignment='right' )
-    
-    # write y-axis label for main axes
     main_axes.set_ylabel(y_label, fontsize=label_fontsize,
                          y=1, horizontalalignment='right') 
-    
-    # draw the legend
-    main_axes.legend(frameon=False, fontsize=legend_fontsize) # no box around the legend    
-    
+    main_axes.legend(frameon=False, fontsize=legend_fontsize) 
     main_axes.set_title(title, fontsize=title_fontsize)
     
     if logy:
@@ -182,7 +181,6 @@ def plot_errorbars(data_dict,
     elapsed_time = time.time() - time_start 
     print("Elapsed time = " + str(round(elapsed_time, 1)) + "s") # Print the time elapsed
 
-    # Show the plot
     plt.tight_layout()
     plt.show()
 

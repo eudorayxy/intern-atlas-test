@@ -1,3 +1,4 @@
+# string codes and their corresponding filepath to pre-written parquet files (produced using analysis_uproot())
 directory = '../backend/parquet'
 PARQUET_DICT = {
     '2to4lep' : f'{directory}/2to4lep',
@@ -8,6 +9,13 @@ PARQUET_DICT = {
     'VBF_Zee' : f'{directory}/VBF_Zee',
     'VBF_Zmumu' : f'{directory}/VBF_Zmumu',
     'VBF_Ztautau' : f'{directory}/VBF_Ztautau',
+
+    'Zee_BFil' : f'{directory}/Zee_BFil',
+    'Zee_CFilBVeto' : f'{directory}/Zee_CFilBVeto',
+    'Zee_CVetoBVeto' : f'{directory}/Zee_CVetoBVeto',
+    'Zmumu_BFil' : f'{directory}/Zmumu_BFil',
+    'Zmumu_CFilBVeto' : f'{directory}/Zmumu_CFilBVeto',
+    'Zmumu_CVetoBVeto' : f'{directory}/Zmumu_CVetoBVeto',
     
     'Wenu' : f'{directory}/Wenu',
     'Wmunu' : f'{directory}/Wmunu',
@@ -29,8 +37,9 @@ PARQUET_DICT = {
     'ZH_H4l' : f'{directory}/ZH_H4l',
     'ggZH_H4l' : f'{directory}/ggZH_H4l',
     'ttH_H4l' : f'{directory}/ttH_H4l',
-    
+
     'GamGam' : f'{directory}/GamGam',
+    #'Hyy' : f'{directory}/Hyy',
     
     'ggF_Hyy' : f'{directory}/ggF_Hyy',
     'VBF_Hyy' : f'{directory}/VBF_Hyy',
@@ -50,6 +59,5 @@ STR_CODE_COMBO = {
     'Hyy' : 'ggF_Hyy + VBF_Hyy + WpH_Hyy + WmH_Hyy + ZH_Hyy + ggZH_Hyy + ttH_Hyy'
 }
 
+# Valid string codes
 VALID_STR_CODE = list(PARQUET_DICT.keys()) + list(STR_CODE_COMBO.keys())
-
-DATA_SKIMS = ['2to4lep', '2muons', 'GamGam', 'exactly4lep', '1LMET30', '3J1LMET30', '2J2LMET30', '2bjets', '3lep', 'exactly3lep', '4lep']

@@ -4,6 +4,6 @@ from .GetHistogram import get_histogram
 from .PlotErrorBar import plot_errorbars
 from .AnalysisParquet import analysis_parquet
 from .AnalysisUproot import analysis_uproot
-from .DataSetsMagic import Dids_dict, validSkims
+from .DataSetsMagic import DIDS_DICT, VALID_SKIMS
 from .ParquetDict import VALID_STR_CODE
 

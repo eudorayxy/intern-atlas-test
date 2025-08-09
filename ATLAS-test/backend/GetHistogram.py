@@ -10,8 +10,8 @@ def get_histogram(variable_data, num_bins, xmin, xmax, hist_name, weight=None):
     # Replace any None with np.nan, and then convert to numpy
     variable_data = ak.to_numpy(ak.fill_none(variable_data, np.nan))
     if weight is not None:
-        if isinstance(weight, str):
-            raise TypeError(f'weight found to be a str: {weight}. It should be None or an Awkward Array that has the same length as variable_data') 
+        if isinstance(weight, (str, int, float)):
+            raise TypeError(f'weight found to be {type(weight)}. It should be None or an Awkward Array that has the same length as variable_data') 
         if len(weight) != len(variable_data):
             raise ValueError(f'weight has to have the same length as variable_data. Got {len(weight)} and {len(variable_data)}')
         

@@ -1,7 +1,14 @@
-Dids_dict = {
+# String codes and their dataset identifiers
+DIDS_DICT = {
     # Z->ll
     'Zee' : [700320, 700321, 700322],
+    'Zee_BFil' : [700320],
+    'Zee_CFilBVeto' : [700321],
+    'Zee_CVetoBVeto' : [700322],
     'Zmumu' : [700323, 700324, 700325],
+    'Zmumu_BFil' : [700323],
+    'Zmumu_CFilBVeto' : [700324],
+    'Zmumu_CVetoBVeto' : [700325],
     'Ztautau' : [700792, 700793, 700794],
     # VBF Z->ll
     'VBF_Zee' : [700358], 'VBF_Zmumu' : [700359],
@@ -33,31 +40,31 @@ Dids_dict = {
     }
 
 # Create records with generic name
-Dids_dict['VBF_Zll'] = (Dids_dict['VBF_Zee'] + 
-                        Dids_dict['VBF_Zmumu'] + 
-                        Dids_dict['VBF_Ztautau'])
-Dids_dict['m10_40_Zll'] = (Dids_dict['m10_40_Zee'] + 
-                           Dids_dict['m10_40_Zmumu'])
-Dids_dict['Wlepnu'] = (Dids_dict['Wenu'] + 
-                       Dids_dict['Wmunu'] + 
-                       Dids_dict['Wtaunu'])
-Dids_dict['VBF_Wlepnu'] = (Dids_dict['VBF_Wenu'] + 
-                           Dids_dict['VBF_Wmunu'] + 
-                           Dids_dict['VBF_Wtaunu'])
-Dids_dict['Hyy'] = (Dids_dict['ggF_Hyy'] + 
-                    Dids_dict['VBF_Hyy'] +
-                    Dids_dict['WpH_Hyy'] +
-                    Dids_dict['WmH_Hyy'] + 
-                    Dids_dict['ZH_Hyy'] +
-                    Dids_dict['ggZH_Hyy'] +
-                    Dids_dict['ttH_Hyy'])
-Dids_dict['H4l'] = (Dids_dict['ggH_H4l'] + 
-                      Dids_dict['VBF_H4l'] +
-                      Dids_dict['WpH_H4l'] +
-                      Dids_dict['WmH_H4l'] + 
-                      Dids_dict['ZH_H4l'] +
-                      Dids_dict['ggZH_H4l'] +
-                      Dids_dict['ttH_H4l'])
-                    
-validSkims = ['2to4lep', '2muons', 'GamGam', 'exactly4lep', '1LMET30', '3J1LMET30', 
+DIDS_DICT['VBF_Zll'] = (DIDS_DICT['VBF_Zee'] + 
+                        DIDS_DICT['VBF_Zmumu'] + 
+                        DIDS_DICT['VBF_Ztautau'])
+DIDS_DICT['m10_40_Zll'] = (DIDS_DICT['m10_40_Zee'] + 
+                           DIDS_DICT['m10_40_Zmumu'])
+DIDS_DICT['Wlepnu'] = (DIDS_DICT['Wenu'] + 
+                       DIDS_DICT['Wmunu'] + 
+                       DIDS_DICT['Wtaunu'])
+DIDS_DICT['VBF_Wlepnu'] = (DIDS_DICT['VBF_Wenu'] + 
+                           DIDS_DICT['VBF_Wmunu'] + 
+                           DIDS_DICT['VBF_Wtaunu'])
+DIDS_DICT['Hyy'] = (DIDS_DICT['ggF_Hyy'] + 
+                    DIDS_DICT['VBF_Hyy'] +
+                    DIDS_DICT['WpH_Hyy'] +
+                    DIDS_DICT['WmH_Hyy'] + 
+                    DIDS_DICT['ZH_Hyy'] +
+                    DIDS_DICT['ggZH_Hyy'] +
+                    DIDS_DICT['ttH_Hyy'])
+DIDS_DICT['H4l'] = (DIDS_DICT['ggH_H4l'] + 
+                      DIDS_DICT['VBF_H4l'] +
+                      DIDS_DICT['WpH_H4l'] +
+                      DIDS_DICT['WmH_H4l'] + 
+                      DIDS_DICT['ZH_H4l'] +
+                      DIDS_DICT['ggZH_H4l'] +
+                      DIDS_DICT['ttH_H4l'])
+              
+VALID_SKIMS = ['2to4lep', '2muons', 'GamGam', 'exactly4lep', '1LMET30', '3J1LMET30', 
               '2J2LMET30', '2bjets', '3lep', 'exactly3lep', '4lep']
