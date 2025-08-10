@@ -322,7 +322,7 @@ def plot_stacked_hist(data_dict, # see above
                         fit_label='fit', # legend label for fit
                         fit_fmt='-r', # plt.error format for fit
                         logy=False, # Whether to set log y axis
-                        title=None, # Str or list of str for title
+                        title=None, # Str for title
                         marker='o', # Marker type
                         title_fontsize=17, # Fontsize for title
                         label_fontsize=17, # Fontsize for x and y axes

@@ -71,7 +71,7 @@ def plot_errorbars(data_dict,
                    # Optional arguments start from here
                    y_label='Events',
                    logy=False,
-                   title='',
+                   title=None,
                    marker='o',
                    title_fontsize=17,
                    label_fontsize=17,
@@ -172,8 +172,9 @@ def plot_errorbars(data_dict,
                          x=1, horizontalalignment='right' )
     main_axes.set_ylabel(y_label, fontsize=label_fontsize,
                          y=1, horizontalalignment='right') 
-    main_axes.legend(frameon=False, fontsize=legend_fontsize) 
-    main_axes.set_title(title, fontsize=title_fontsize)
+    main_axes.legend(frameon=False, fontsize=legend_fontsize)
+    if title is not None:
+        main_axes.set_title(title, fontsize=title_fontsize)
     
     if logy:
         main_axes.set_yscale('log')
