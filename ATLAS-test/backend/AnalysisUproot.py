@@ -39,6 +39,11 @@ def validate_files(samples, skim, sample_path):
                 print(f"File {fileString} already exists in {folder}. Skipping download.")
             else:
                 print(f"Downloading {fileString} to {folder} ...")
+
+                # if cache=True in get_samples_magic(), we need to remove 'simplecache::' from val to get https://...
+                if val.startswith("simplecache::"):
+                    val = val.split("simplecache::", 1)[1]
+                    
                 with requests.get(val, stream=True) as r:
                     r.raise_for_status()
                     with open(file_path, "wb") as f:
