@@ -297,9 +297,10 @@ def analysis_uproot(skim, # Skim for the dataset.
     if not samples:
         return {} # Empty samples - no analysis needed
 
+    now = datetime.datetime.now(ZoneInfo("Europe/London"))
+    
     # Write summary log to a text file
     if write_txt:
-        now = datetime.datetime.now(ZoneInfo("Europe/London"))
         if not txt_filename: # Create text filename if not provided 
             strf = now.strftime("%y%m%d")
             txt_filename = f'txt/analysis_uproot{strf}'
